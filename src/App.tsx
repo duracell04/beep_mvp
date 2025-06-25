@@ -2,10 +2,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Onboarding, Quiz, Match, Admin } from './pages';
+import DevNav from './components/DevNav';
 
 export default function App() {
   return (
     <BrowserRouter>
+      {import.meta.env.DEV && <DevNav />}
       <Routes>
         <Route path="/" element={<Navigate to="/onboarding" replace />} />
         <Route path="/onboarding" element={<Onboarding />} />
