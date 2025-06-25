@@ -179,3 +179,11 @@ Unique real-world UX (BLE proximity + two-layer match model + event ops) that in
 
 *Beep is thoughtfully designed from psychological, sociological, market, and technological standpoints to enhance genuine human connection—in a fun, intuitive, and privacy-respecting way.*
 
+## Development
+
+This project uses pnpm with Vite and React.
+
+```bash
+pnpm install
+pnpm dev
+```
