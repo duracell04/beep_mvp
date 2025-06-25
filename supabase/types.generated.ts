@@ -1,1 +1,2 @@
-// Placeholder for Supabase generated types
+// types.generated.ts – placeholder for Supabase typegen
+export {};
