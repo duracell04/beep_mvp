@@ -187,3 +187,10 @@ This project uses pnpm with Vite and React.
 pnpm install
 pnpm dev
 ```
+
+### Supabase Setup
+
+Run `supabase/init.sql` in your project database to create the `sessions` table.
+After running the script, enable **Row Level Security (RLS)** for `sessions` in
+the Supabase dashboard and add a policy allowing users to read only rows where
+`event_code` matches their JWT context.
