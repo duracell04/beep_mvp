@@ -14,7 +14,8 @@
     "supabase-js": "^2.39.8",
     "zod": "^3.22.2",
     "uuid": "^9.0.0",
-    "qrcode.react": "^1.0.0"
+    "qrcode.react": "^1.0.0",
+    "html5-qrcode": "^2.3.9"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",
