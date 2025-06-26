@@ -1,5 +1,5 @@
 # Beep 🚦  
-*The Traffic-Light for Real-World Chemistry*
+*The Traffic-Light for Real Chemistry*
 
 ---
 
