@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import { useQuiz } from '../context/QuizContext';
+import { useQuiz } from '../contexts/QuizContext';
 import MatchResult from '../components/MatchResult';
 import { computeMatch, MatchOutcome } from '../algo/matcher';
 
