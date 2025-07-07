@@ -63,6 +63,7 @@ No endless bios, no small-talk roulette—just an ice-breaker you can feel.
 2. **Complete Two-Layer Quiz** (~90 sec):
     - **Layer A**: “Who I Am” (Big-5 mini, lifestyle)
     - **Layer B**: “What I’m Looking For” (deal-breakers, preferences)
+    - Set importance for each answer and toggle personal deal-breakers
 3. **Get Personal QR**: Rotates every 90s for privacy.
 4. **Scan or Beep**: Scan camera or BLE tap.
 5. **See Result**: Color + % appears (fades after 10s).
