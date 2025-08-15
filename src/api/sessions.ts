@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { computeMatch } from '../algo/matcher';
+import type { UserAnswer } from '../data/types';
 
 export interface Stats {
   participants: number;
@@ -14,7 +15,7 @@ export interface Stats {
 export async function saveSession(
   token: string,
   eventCode: string,
-  answers: Record<string, string | number>
+  answers: Record<string, UserAnswer>
 ) {
   await supabase
     .from('sessions')
@@ -29,7 +30,7 @@ export async function getStats(eventCode?: string): Promise<Stats> {
   const { data, error } = await query;
   if (error) throw error;
 
-  const rows = (data ?? []) as { answers: Record<string, string | number> }[];
+  const rows = (data ?? []) as { answers: Record<string, UserAnswer> }[];
   const participants = rows.length;
   const colors = { green: 0, yellow: 0, red: 0 };
   let scoreSum = 0;

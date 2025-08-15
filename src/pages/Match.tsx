@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { useQuiz } from '../contexts/QuizContext';
 import MatchResult from '../components/MatchResult';
 import { computeMatch, MatchOutcome } from '../algo/matcher';
+import type { UserAnswer } from '../data/types';
 
 export default function Match() {
   const location = useLocation() as { state?: { peerToken?: string } };
@@ -22,7 +23,7 @@ export default function Match() {
       if (data?.answers) {
         const res = computeMatch(
           answers,
-          data.answers as Record<string, string | number>
+          data.answers as Record<string, UserAnswer>
         );
         setResult(res);
       }
