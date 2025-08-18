@@ -1,9 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '../supabase/types.generated'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+const url  = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-
-// TODO: add auth later
+export const supabase: SupabaseClient | null =
+  url && anon ? createClient(url, anon) : null;

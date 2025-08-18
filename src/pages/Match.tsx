@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useQuiz } from '../contexts/QuizContext';
 import MatchResult from '../components/MatchResult';
-import { computeMatch, MatchOutcome } from '../algo/matcher';
-import type { UserAnswer } from '../data/types';
+import { computeMatch, type MatchOutcome } from '../algo/matcher';
 
 export default function Match() {
   const location = useLocation() as { state?: { peerToken?: string } };
@@ -13,27 +12,31 @@ export default function Match() {
   const [result, setResult] = useState<MatchOutcome | null>(null);
 
   useEffect(() => {
-    const fetchPeer = async () => {
+    const run = async () => {
+      // Demo mode: no backend → still show a result
+      if (!supabase) {
+        setResult(computeMatch(answers as Record<string, unknown>, {}));
+        return;
+      }
       if (!peerToken) return;
+
       const { data } = await supabase
         .from('sessions')
         .select('answers')
         .eq('token', peerToken)
         .single();
+
       if (data?.answers) {
         const res = computeMatch(
-          answers,
-          data.answers as Record<string, UserAnswer>
+          answers as Record<string, unknown>,
+          data.answers as Record<string, unknown>
         );
         setResult(res);
       }
     };
-    fetchPeer();
+    run();
   }, [peerToken, answers]);
 
-  if (!result) {
-    return <div className="p-4">Loading...</div>;
-  }
-
+  if (!result) return <div className="p-4">Loading...</div>;
   return <MatchResult color={result.color} score={result.score} />;
 }
