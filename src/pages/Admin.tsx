@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEvent } from '../context/EventContext';
 import { getStats, Stats } from '../api/sessions';
 import Spinner from '../components/Spinner';
-import ErrorBanner from '../components/ErrorBanner';
+import Alert from '../components/ui/Alert';
+import { Card, CardContent, CardHeader } from '../components/ui/Card';
 
 export default function Admin() {
   const { eventCode } = useEvent();
@@ -29,33 +30,60 @@ export default function Admin() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-4">
-      {error && <ErrorBanner message={error} />}
-      {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <div className="border rounded p-4 text-center">
-            <div className="text-sm text-gray-500">Participants</div>
-            <div className="text-2xl font-bold">{stats.participants}</div>
-          </div>
-          <div className="border rounded p-4 text-center">
-            <div className="text-sm text-gray-500">Avg. Score</div>
-            <div className="text-2xl font-bold">
-              {stats.avgScore.toFixed(2)}
-            </div>
-          </div>
-          <div className="border rounded p-4 text-center">
-            <div className="text-sm text-gray-500">Green</div>
-            <div className="text-2xl font-bold">{stats.colors.green}</div>
-          </div>
-          <div className="border rounded p-4 text-center">
-            <div className="text-sm text-gray-500">Yellow</div>
-            <div className="text-2xl font-bold">{stats.colors.yellow}</div>
-          </div>
-          <div className="border rounded p-4 text-center">
-            <div className="text-sm text-gray-500">Red</div>
-            <div className="text-2xl font-bold">{stats.colors.red}</div>
-          </div>
+    <div className="flex flex-col gap-4 p-4">
+      {error && <Alert variant="error" children={error} />}
+      {stats ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <Card className="text-center">
+            <CardHeader className="text-sm text-slate-500 dark:text-slate-400">
+              Participants
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{stats.participants}</div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardHeader className="text-sm text-slate-500 dark:text-slate-400">
+              Avg. Score
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{stats.avgScore.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardHeader className="text-sm text-slate-500 dark:text-slate-400">
+              Green
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{stats.colors.green}</div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardHeader className="text-sm text-slate-500 dark:text-slate-400">
+              Yellow
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{stats.colors.yellow}</div>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardHeader className="text-sm text-slate-500 dark:text-slate-400">
+              Red
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold">{stats.colors.red}</div>
+            </CardContent>
+          </Card>
         </div>
+      ) : (
+        <Card className="text-center">
+          <CardHeader>No data</CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-500">
+              Configure Supabase environment variables to view stats.
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

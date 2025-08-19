@@ -1,11 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useNavigate } from 'react-router-dom';
 import Spinner from '../components/Spinner';
-import ErrorBanner from '../components/ErrorBanner';
 import { useEvent } from '../context/EventContext';
 import { QrPayload } from '../schemas/qr';
 import { z } from 'zod';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import { Card, CardContent, CardHeader } from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
 
 export default function Scan() {
   const { eventCode } = useEvent();
@@ -102,7 +105,11 @@ export default function Scan() {
 
   const handleRetry = () => {
     setError('');
-    qrRef.current?.resume().catch(() => {});
+    try {
+      qrRef.current?.resume();
+    } catch {
+      /* ignore */
+    }
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -117,34 +124,48 @@ export default function Scan() {
 
   return (
     <div className="flex flex-col items-center gap-4 p-4">
-      {error && <ErrorBanner message={error} />}
+      {error && <Alert variant="error" className="w-full max-w-sm" children={error} />}
       {error === 'This QR is expired or not for this event.' && (
-        <button
-          onClick={handleRetry}
-          className="bg-blue-500 text-white px-3 py-1 rounded"
-        >
-          Retry
-        </button>
+        <Button onClick={handleRetry}>Retry</Button>
       )}
       {loading && <Spinner />}
       {!noCamera ? (
-        <div ref={scannerRef} />
+        <div className="relative">
+          <div ref={scannerRef} />
+          <div className="pointer-events-none absolute inset-0 flex justify-between">
+            <div className="m-2 w-8 h-8 border-t-4 border-l-4 border-brand" />
+            <div className="m-2 w-8 h-8 border-t-4 border-r-4 border-brand" />
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between">
+            <div className="m-2 w-8 h-8 border-b-4 border-l-4 border-brand" />
+            <div className="m-2 w-8 h-8 border-b-4 border-r-4 border-brand" />
+          </div>
+        </div>
       ) : (
-        <form onSubmit={handleManualSubmit} className="flex flex-col gap-2">
-          <input
-            value={manualToken}
-            onChange={(e) => setManualToken(e.target.value)}
-            className="border p-2"
-            placeholder="Enter token"
-          />
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-3 py-1 rounded"
-          >
-            Go
-          </button>
-        </form>
+        <Card className="w-full max-w-sm">
+          <CardHeader>Enter code manually</CardHeader>
+          <CardContent>
+            <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
+              <Input
+                value={manualToken}
+                onChange={(e) => setManualToken(e.target.value)}
+                placeholder="Enter token"
+                label="Token"
+              />
+              <Button type="submit">Go</Button>
+            </form>
+          </CardContent>
+        </Card>
       )}
+      {!noCamera && (
+        <button
+          onClick={() => setNoCamera(true)}
+          className="text-sm underline"
+        >
+          Enter code manually
+        </button>
+      )}
+      <p className="text-xs text-slate-500">Move closer / Aim at the QR</p>
     </div>
   );
 }

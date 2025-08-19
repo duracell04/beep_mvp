@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import DevNav from './components/DevNav';
+import Layout from './components/Layout';
 
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Quiz       = lazy(() => import('./pages/Quiz'));
@@ -13,15 +14,17 @@ export default function App() {
   return (
     <BrowserRouter>
       {import.meta.env.DEV && <DevNav />}
-      <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
+      <Suspense fallback={<div className="p-4">Loading…</div>}>
         <Routes>
-          <Route path="/" element={<Navigate to="/onboarding" replace />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/quiz" element={<Quiz />} />
-          <Route path="/myqr" element={<MyQR />} />
-          <Route path="/scan" element={<Scan />} />
-          <Route path="/match" element={<Match />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route element={<Layout />}>
+            <Route path="/" element={<Navigate to="/onboarding" replace />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/quiz" element={<Quiz />} />
+            <Route path="/myqr" element={<MyQR />} />
+            <Route path="/scan" element={<Scan />} />
+            <Route path="/match" element={<Match />} />
+            <Route path="/admin" element={<Admin />} />
+          </Route>
         </Routes>
       </Suspense>
     </BrowserRouter>

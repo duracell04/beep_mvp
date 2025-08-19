@@ -22,6 +22,16 @@ body {
   --beep-mid:#f59e0b;
   --beep-bot:#10b981;
 }
+.dark { color-scheme: dark; }
 .state-red   { color: var(--beep-top);  --beep-top: var(--beep-top); }
 .state-yellow{ color: var(--beep-mid);  --beep-mid: var(--beep-mid); }
 .state-green { color: var(--beep-bot);  --beep-bot: var(--beep-bot); }
+
+@keyframes beep-pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+.beep-pulse {
+  animation: beep-pulse 2s ease-in-out infinite;
+}
