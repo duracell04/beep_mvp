@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useEvent } from '../context/EventContext';
+import BeepLogo from '../components/BeepLogo';
 
 export default function Onboarding() {
   const { setEventCode } = useEvent();
@@ -20,7 +21,7 @@ export default function Onboarding() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-4">
-      <img src="/logo.png" alt="Beep logo" className="w-32" />
+      <BeepLogo withWordmark className="text-7xl" />
       <form onSubmit={handleSubmit} className="flex flex-col items-center gap-2">
         <input
           type="text"
