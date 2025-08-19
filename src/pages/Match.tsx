@@ -13,7 +13,6 @@ export default function Match() {
 
   useEffect(() => {
     const run = async () => {
-      // Demo mode: no backend → still show a result
       if (!supabase) {
         setResult(computeMatch(answers as Record<string, unknown>, {}));
         return;
