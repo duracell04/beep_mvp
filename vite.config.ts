@@ -26,9 +26,6 @@ export default defineConfig({
             handler: 'NetworkFirst',
           },
         ],
-        fallback: {
-          document: '/offline.html',
-        },
       },
     })
   ]

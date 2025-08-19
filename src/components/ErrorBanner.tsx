@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function ErrorBanner({ message }: { message: string }) {
   if (!message) return null;
   return (
