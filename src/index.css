@@ -15,3 +15,13 @@ body {
 #root {
   min-height: 100vh;
 }
+
+:root {
+  --brand:#0f172a;
+  --beep-top:#ef4444;
+  --beep-mid:#f59e0b;
+  --beep-bot:#10b981;
+}
+.state-red   { color: var(--beep-top);  --beep-top: var(--beep-top); }
+.state-yellow{ color: var(--beep-mid);  --beep-mid: var(--beep-mid); }
+.state-green { color: var(--beep-bot);  --beep-bot: var(--beep-bot); }
