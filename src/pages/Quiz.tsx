@@ -1,176 +1,187 @@
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuiz } from '../contexts/QuizContext';
-import { layerA } from '../data/layerA';
-import { layerB } from '../data/layerB';
-import type { Question, ImportanceLevel } from '../data/types';
-import Button from '../components/ui/Button';
-import Progress from '../components/ui/Progress';
-import { Card } from '../components/ui/Card';
+import { useEvent } from '@/contexts/EventContext';
+import { useQuiz } from '@/contexts/QuizContext';
+import { layerAQuestions, layerBQuestions, ImportanceLevel } from '@/data/questions';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
+import { BeepLogo } from '@/components/BeepLogo';
 
-const layers = [layerA, layerB];
-const totalSteps = layers.length + 1; // + review
+const Quiz = () => {
+  const { eventCode } = useEvent();
+  const { answers, updateLayerA, updateLayerB } = useQuiz();
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [layerAAnswers, setLayerAAnswers] = useState<Record<string, string>>(answers?.layerA || {});
+  const [layerBAnswers, setLayerBAnswers] = useState<Record<string, { value: string; importance: ImportanceLevel; dealBreaker: boolean }>>(
+    answers?.layerB.reduce((acc, ans) => ({
+      ...acc,
+      [ans.questionId]: { value: ans.value, importance: ans.importance, dealBreaker: ans.dealBreaker }
+    }), {}) || {}
+  );
 
-export default function Quiz(){
-  const nav = useNavigate();
-  const {step,setStep,answers,setAnswerValue,setImportance,toggleDealBreaker}=useQuiz();
+  if (!eventCode) {
+    navigate('/');
+    return null;
+  }
 
-  const layerComplete = (qs:Question[]) =>
-    qs.every(q => {
-      const a = answers[q.id];
-      return a?.value !== undefined && (step===0 || a.importance!==undefined);
-    });
+  const totalSteps = layerAQuestions.length + layerBQuestions.length;
+  const progress = ((currentStep + 1) / totalSteps) * 100;
+  const isLayerA = currentStep < layerAQuestions.length;
+  const currentQuestion = isLayerA
+    ? layerAQuestions[currentStep]
+    : layerBQuestions[currentStep - layerAQuestions.length];
 
-  const isStepComplete = step<layers.length
-    ? layerComplete(layers[step])
-    : layerA.concat(layerB).every(q=>answers[q.id]?.value!==undefined);
+  const currentAnswer = isLayerA
+    ? layerAAnswers[currentQuestion.id]
+    : layerBAnswers[currentQuestion.id]?.value;
 
-  const next=()=> step<totalSteps-1 ? setStep(step+1) : nav('/myqr');
+  const canProceed = !!currentAnswer && (!isLayerA ? !!layerBAnswers[currentQuestion.id]?.importance : true);
 
-  useEffect(()=>{
-    const handler=(e:KeyboardEvent)=>{
-      if(e.key==='ArrowRight' && isStepComplete){
-        step<totalSteps-1 ? setStep(step+1) : nav('/myqr');
-      }
-      if(e.key==='ArrowLeft' && step>0) setStep(step-1);
-    };
-    window.addEventListener('keydown',handler);
-    return()=>window.removeEventListener('keydown',handler);
-  },[isStepComplete, step, nav, setStep]);
+  const handleNext = () => {
+    if (isLayerA) {
+      updateLayerA(currentQuestion.id, currentAnswer!);
+    } else {
+      const bAnswer = layerBAnswers[currentQuestion.id];
+      updateLayerB({
+        questionId: currentQuestion.id,
+        value: bAnswer.value,
+        importance: bAnswer.importance,
+        dealBreaker: bAnswer.dealBreaker,
+      });
+    }
 
-  useEffect(()=>{ window.scrollTo({top:0}); },[step]);
-
-  /** helpers */
-  const impLabel=(lvl:ImportanceLevel)=>({1:'Low',3:'Medium',5:'High'}[lvl]);
-
-  /** rendering */
-  const renderInput=(q:Question)=>{
-    const a=answers[q.id]||{};
-    switch(q.type){
-      case 'yesno':
-        return (
-          <div className="flex gap-2">
-            {['yes','no'].map(opt => (
-              <Button
-                key={opt}
-                type="button"
-                variant={a.value===opt ? 'primary' : 'outline'}
-                onClick={()=>setAnswerValue(q.id,opt)}
-              >
-                {opt.toUpperCase()}
-              </Button>
-            ))}
-          </div>
-        );
-      case 'slider':
-        return (
-          <input
-            type="range"
-            min={1}
-            max={5}
-            className="w-full accent-brand"
-            value={(a.value as number)||3}
-            onChange={e=>setAnswerValue(q.id,Number(e.target.value))}
-          />
-        );
-      case 'select':
-        return (
-          <select
-            value={(a.value as string)||''}
-            onChange={e=>setAnswerValue(q.id,e.target.value)}
-            className="w-full rounded-md border border-slate-300 p-2 dark:border-slate-600 dark:bg-slate-900"
-          >
-            <option value="" disabled>Choose…</option>
-            {q.options!.map(o=>(<option key={o}>{o}</option>))}
-          </select>
-        );
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      navigate('/myqr');
     }
   };
 
-  const QuestionCard=(q:Question,layerIdx:number)=>{
-    const a=answers[q.id]||{};
-    return(
-      <Card key={q.id} className="mb-6">
-        <div className="flex justify-between">
-          <p className="font-medium">{q.text}</p>
-          {layerIdx===0 && q.weight && (
-            <span className="text-sm text-brand">★{q.weight}</span>
-          )}
-        </div>
-        <div className="mt-4 space-y-4">
-          {renderInput(q)}
-          {layerIdx===1 && (
-            <>
-              <div className="flex gap-2 text-sm">
-                {[1,3,5].map(lvl=>(
-                  <Button
-                    key={lvl}
-                    type="button"
-                    variant={a.importance===lvl?'primary':'outline'}
-                    size="sm"
-                    onClick={()=>setImportance(q.id,lvl as ImportanceLevel)}
-                    className="flex-1"
-                  >
-                    {impLabel(lvl as ImportanceLevel)}
-                  </Button>
-                ))}
-              </div>
-              <label className="flex items-center text-sm">
-                <input
-                  type="checkbox"
-                  className="mr-2 rounded border-slate-300 text-brand focus:ring-brand"
-                  checked={a.isDealBreaker||false}
-                  onChange={()=>toggleDealBreaker(q.id)}
-                />
-                Deal-breaker
-              </label>
-            </>
-          )}
-        </div>
-      </Card>
-    );
+  const handleAnswerChange = (value: string) => {
+    if (isLayerA) {
+      setLayerAAnswers({ ...layerAAnswers, [currentQuestion.id]: value });
+    } else {
+      setLayerBAnswers({
+        ...layerBAnswers,
+        [currentQuestion.id]: {
+          value,
+          importance: layerBAnswers[currentQuestion.id]?.importance || 'medium',
+          dealBreaker: layerBAnswers[currentQuestion.id]?.dealBreaker || false,
+        },
+      });
+    }
   };
 
-  return(
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm"><span>Step {Math.min(step+1,totalSteps)}</span><span>{totalSteps}</span></div>
-        <Progress value={step} max={totalSteps-1} />
-      </div>
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl shadow-card">
+        <CardHeader>
+          <div className="flex items-center justify-between mb-4">
+            <BeepLogo variant="monogram" className="w-10 h-10 text-primary" />
+            <Badge variant="outline">
+              {currentStep + 1} / {totalSteps}
+            </Badge>
+          </div>
+          <Progress value={progress} className="mb-4" />
+          <CardTitle className="text-2xl">
+            {isLayerA ? 'About You' : 'Your Preferences'}
+          </CardTitle>
+          <CardDescription>
+            {isLayerA ? 'Tell us about your personality' : 'What matters to you in a match?'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <h3 className="text-lg font-semibold mb-4">{currentQuestion.text}</h3>
+            <RadioGroup value={currentAnswer} onValueChange={handleAnswerChange}>
+              <div className="space-y-3">
+                {currentQuestion.options.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                    <RadioGroupItem value={option.value} id={option.value} />
+                    <Label htmlFor={option.value} className="flex-1 cursor-pointer">
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </RadioGroup>
+          </div>
 
-      <h1 className="text-2xl font-bold">
-        {step===0?'Who I Am':step===1?'What I Want':'Review'}
-      </h1>
-
-      {step<layers.length
-        ? layers[step].map(q=>QuestionCard(q,step))
-        : (
-          <Card>
-            {layerA.concat(layerB).map(q=>{
-              const a=answers[q.id];
-              return(
-                <div key={q.id} className="border-b py-2 text-sm last:border-none dark:border-slate-700">
-                  <p>{q.text}</p>
-                  <p className="text-slate-600 dark:text-slate-300">
-                    {a?.value?.toString()}
-                    {layerB.find(x=>x.id===q.id) && a?.importance && ` – ${impLabel(a.importance)}`}
-                    {a?.isDealBreaker && ' – Deal-breaker'}
-                  </p>
+          {!isLayerA && currentAnswer && (
+            <div className="space-y-4 p-4 bg-muted rounded-lg">
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">Importance Level</Label>
+                <div className="flex gap-2">
+                  {(['low', 'medium', 'high'] as ImportanceLevel[]).map((level) => (
+                    <Button
+                      key={level}
+                      type="button"
+                      variant={layerBAnswers[currentQuestion.id]?.importance === level ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() =>
+                        setLayerBAnswers({
+                          ...layerBAnswers,
+                          [currentQuestion.id]: {
+                            ...layerBAnswers[currentQuestion.id],
+                            importance: level,
+                          },
+                        })
+                      }
+                      className="flex-1 capitalize"
+                    >
+                      {level}
+                    </Button>
+                  ))}
                 </div>
-              );
-            })}
-          </Card>
-        )
-      }
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="dealbreaker" className="text-sm font-semibold">
+                  This is a deal-breaker
+                </Label>
+                <Switch
+                  id="dealbreaker"
+                  checked={layerBAnswers[currentQuestion.id]?.dealBreaker || false}
+                  onCheckedChange={(checked) =>
+                    setLayerBAnswers({
+                      ...layerBAnswers,
+                      [currentQuestion.id]: {
+                        ...layerBAnswers[currentQuestion.id],
+                        dealBreaker: checked,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
 
-      <div className="sticky bottom-0 flex justify-between gap-4 border-t border-slate-200 bg-gray-50/80 py-4 backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/80">
-        <Button variant="outline" disabled={step===0} onClick={()=>setStep(step-1)}>
-          Back
-        </Button>
-        <Button disabled={!isStepComplete} onClick={next}>
-          {step<totalSteps-1?'Next':'Submit'}
-        </Button>
-      </div>
+          <div className="flex gap-3">
+            {currentStep > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(currentStep - 1)}
+              >
+                Back
+              </Button>
+            )}
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed}
+              className="flex-1"
+            >
+              {currentStep < totalSteps - 1 ? 'Next' : 'Complete'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default Quiz;

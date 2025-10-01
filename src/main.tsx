@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import { EventProvider } from './context/EventContext';
+import { EventProvider } from './contexts/EventContext';
 import { QuizProvider } from './contexts/QuizContext';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

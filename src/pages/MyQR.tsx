@@ -1,76 +1,101 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEvent } from '@/contexts/EventContext';
+import { useQuiz } from '@/contexts/QuizContext';
+import { BeepLogo } from '@/components/BeepLogo';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { QRCodeCanvas } from 'qrcode.react';
-import { v4 as uuidv4 } from 'uuid';
-import { useEvent } from '../context/EventContext';
-import { useQuiz } from '../contexts/QuizContext';
-import { saveSession } from '../api/sessions';
-import Button from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardFooter } from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import { Copy, Download } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import { generateToken, buildQrPayload, withEventCode } from '@/lib/session';
+import { saveSession } from '@/api/sessions';
 
-export default function MyQR() {
+const MyQR = () => {
   const { eventCode } = useEvent();
-  const { answers } = useQuiz();
-  const [token, setToken] = useState('');
-  const [payload, setPayload] = useState('');
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const { answers, isComplete } = useQuiz();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [qrValue, setQrValue] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const generate = async () => {
-      const newToken = uuidv4();
-      const exp = Date.now() + 120_000;
-      setToken(newToken);
-      setPayload(
-        JSON.stringify({ event: eventCode, token: newToken, ts: Date.now(), exp })
-      );
-      await saveSession(newToken, eventCode, answers);
+    if (!eventCode || !isComplete || !answers) {
+      navigate('/');
+      return;
+    }
+
+    const generateQR = async () => {
+      try {
+        const token = generateToken();
+        await saveSession(token, eventCode, withEventCode(answers, eventCode));
+        setQrValue(buildQrPayload(token, eventCode));
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to generate QR:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to generate QR code. Please try again.',
+          variant: 'destructive',
+        });
+      }
     };
-    generate();
-    const id = setInterval(generate, 90_000);
-    return () => clearInterval(id);
-  }, [eventCode, answers]);
 
-  const copy = () => {
-    navigator.clipboard?.writeText(`${window.location.origin}/scan?token=${token}`).catch(() => {});
-  };
+    generateQR();
+    
+    // Rotate QR every 90 seconds
+    const interval = setInterval(generateQR, 90000);
+    return () => clearInterval(interval);
+  }, [eventCode, isComplete, answers, navigate, toast]);
 
-  const download = () => {
-    const canvas = canvasRef.current?.querySelector('canvas');
-    if (!canvas) return;
-    const url = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'beep-qr.png';
-    link.click();
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center justify-center py-10">
-      <Card className="w-full max-w-sm text-center">
-        <CardHeader className="flex flex-col items-center gap-2">
-          <Badge variant="success">Live</Badge>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
-            Show this code to share your answers
-          </p>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-card">
+        <CardHeader className="text-center">
+          <BeepLogo variant="scan" className="w-16 h-16 mx-auto mb-4 text-primary" />
+          <CardTitle className="text-2xl">Your Beep Code</CardTitle>
+          <CardDescription>
+            Let others scan your code to see your match result
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          <div ref={canvasRef} className="beep-pulse">
-            {payload && <QRCodeCanvas value={payload} size={240} includeMargin />}
+        <CardContent className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-inner flex items-center justify-center">
+            {qrValue && (
+              <QRCodeCanvas value={qrValue} size={240} bgColor="#ffffff" fgColor="#e11d48" includeMargin className="h-auto w-full max-w-xs" />
+            )}
           </div>
-          <p className="text-xs text-slate-500">rotates every 90s</p>
+          <div className="text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              This code rotates every 90 seconds for security
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => navigate('/scan')}
+              >
+                Scan Someone
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin')}
+              >
+                Admin
+              </Button>
+            </div>
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-center gap-2">
-          <Button variant="outline" size="sm" onClick={copy}
-            className="flex items-center gap-1">
-            <Copy className="h-4 w-4" /> Copy link
-          </Button>
-          <Button variant="ghost" size="sm" onClick={download}
-            className="flex items-center gap-1">
-            <Download className="h-4 w-4" /> Download PNG
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
-}
+};
+
+export default MyQR;
