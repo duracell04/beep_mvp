@@ -1,48 +1,40 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from './ui/Button';
+import { type MatchColor } from '@/algo/matcher';
+import { Heart, Sparkles, X } from 'lucide-react';
 
-interface Props {
-  color: 'green' | 'yellow' | 'red';
+interface MatchResultProps {
+  color: MatchColor;
   score: number;
+  colorLabel: string;
 }
 
-export default function MatchResult({ color, score }: Props) {
-  const nav = useNavigate();
-  const percent = Math.round(score * 100);
-  const ringColor =
-    color === 'green'
-      ? 'var(--beep-bot)'
-      : color === 'yellow'
-      ? 'var(--beep-mid)'
-      : 'var(--beep-top)';
+export const MatchResult = ({ color, score, colorLabel }: MatchResultProps) => {
+  const colorStyles: Record<MatchColor, string> = {
+    green: 'bg-success/20 border-success text-success',
+    yellow: 'bg-warning/20 border-warning text-warning',
+    red: 'bg-destructive/20 border-destructive text-destructive',
+  };
+
+  const Icon = color === 'green' ? Heart : color === 'yellow' ? Sparkles : X;
 
   return (
-    <div className="flex flex-col items-center gap-6 py-10 text-center">
+    <div className="flex flex-col items-center gap-6 py-8">
       <div
-        className="flex h-48 w-48 items-center justify-center rounded-full border-8"
-        style={{ borderColor: ringColor, color: ringColor }}
+        className={`relative w-48 h-48 rounded-full border-8 ${colorStyles[color]} flex items-center justify-center shadow-glow`}
       >
-        <span className="text-5xl font-bold">{percent}%</span>
+        <div className="text-center">
+          <Icon className="w-16 h-16 mx-auto mb-2" />
+          <div className="text-5xl font-bold">{score}%</div>
+        </div>
+        <div className="absolute inset-0 rounded-full animate-pulse" style={{ opacity: 0.2 }} />
       </div>
-      <p className="text-slate-600 dark:text-slate-300">
-        {percent >= 80
-          ? 'Great match!'
-          : percent >= 50
-          ? 'Could be a fit!'
-          : 'Maybe not this time.'}
-      </p>
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={() => nav('/scan')}>
-          Scan another
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => navigator.clipboard?.writeText(window.location.href)}
-        >
-          Share
-        </Button>
+      <div className="text-center">
+        <h2 className="text-3xl font-bold mb-2">{colorLabel}</h2>
+        <p className="text-muted-foreground max-w-md">
+          {color === 'green' && 'High compatibility - great chemistry potential!'}
+          {color === 'yellow' && 'Some common ground - worth exploring further.'}
+          {color === 'red' && 'Limited compatibility based on preferences.'}
+        </p>
       </div>
     </div>
   );
-}
+};

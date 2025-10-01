@@ -1,171 +1,175 @@
 import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
 import { useNavigate } from 'react-router-dom';
-import Spinner from '../components/Spinner';
-import { useEvent } from '../context/EventContext';
-import { QrPayload } from '../schemas/qr';
-import { z } from 'zod';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import { Card, CardContent, CardHeader } from '../components/ui/Card';
-import Alert from '../components/ui/Alert';
+import { useEvent } from '@/contexts/EventContext';
+import { useQuiz } from '@/contexts/QuizContext';
+import { Html5Qrcode } from 'html5-qrcode';
+import { BeepLogo } from '@/components/BeepLogo';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { parseQrPayload } from '@/lib/session';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Camera } from 'lucide-react';
 
-export default function Scan() {
+const Scan = () => {
   const { eventCode } = useEvent();
+  const { answers } = useQuiz();
   const navigate = useNavigate();
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [noCamera, setNoCamera] = useState(false);
-  const [manualToken, setManualToken] = useState('');
-  const scannerRef = useRef<HTMLDivElement>(null);
-  const qrRef = useRef<Html5Qrcode>();
-
-  const handleSuccess = (text: string) => {
-    try {
-      const parsedJson = JSON.parse(text);
-      const parsed = QrPayload.safeParse(parsedJson);
-      if (!parsed.success) throw new Error('bad');
-      const data = parsed.data;
-      if (data.event !== eventCode || Date.now() > data.exp) {
-        throw new Error('bad');
-      }
-      navigate('/match', { state: { peerToken: data.token } });
-    } catch {
-      qrRef.current?.pause(true);
-      setError('This QR is expired or not for this event.');
-    }
-  };
-
-  const handleError = (err: unknown) => {
-    const msg = String(err).toLowerCase();
-    if (msg.includes('permission') || msg.includes('camera')) {
-      setError('');
-    }
-  };
-
-  const startScanner = async () => {
-    if (!scannerRef.current) return;
-    const id = 'qr-region';
-    scannerRef.current.id = id;
-    const html5 = new Html5Qrcode(id);
-    qrRef.current = html5;
-    try {
-      await html5.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        handleSuccess,
-        handleError
-      );
-      setLoading(false);
-    } catch (err) {
-      const msg = String(err).toLowerCase();
-      if (msg.includes('permission')) {
-        setError('Camera permission denied. Enable camera in system settings.');
-      } else {
-        setError(String(err));
-      }
-      setLoading(false);
-    }
-  };
+  const { toast } = useToast();
+  const [scanning, setScanning] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const qrReaderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    Html5Qrcode.getCameras()
-      .then((devices) => {
-        if (!devices.length) {
-          setNoCamera(true);
-          setLoading(false);
-          return;
-        }
-        startScanner();
-      })
-      .catch(() => {
-        setError('Camera permission denied. Enable camera in system settings.');
-        setLoading(false);
-      });
+    if (!eventCode || !answers) {
+      navigate('/');
+      return;
+    }
 
     return () => {
-      const html5 = qrRef.current;
-      html5
-        ?.stop()
-        .then(() => html5.clear())
-        .catch(() => {});
+      if (scannerRef.current && scanning) {
+        scannerRef.current.stop().catch(() => {
+          // Ignore stop errors during cleanup
+        });
+      }
     };
-  }, [eventCode]);
+  }, [eventCode, answers, navigate, scanning]);
 
-  useEffect(() => {
-    const onVis = () => {
-      const qr = qrRef.current;
-      if (!qr) return;
-      if (document.hidden) qr.pause(true);
-      else if (!error) qr.resume();
-    };
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
-  }, [error]);
+  const startScanning = async () => {
+    if (!qrReaderRef.current) return;
 
-  const handleRetry = () => {
-    setError('');
     try {
-      qrRef.current?.resume();
-    } catch {
-      /* ignore */
+      setScanning(true);
+      const scanner = new Html5Qrcode('qr-reader');
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        async (decodedText) => {
+          setLoading(true);
+          try {
+            // Stop scanner before processing
+            if (scanner.isScanning) {
+              await scanner.stop();
+            }
+            const payload = parseQrPayload(decodedText);
+
+            if (!payload || !payload.t) {
+              toast({
+                title: 'Invalid Code',
+                description: 'Could not find this user. Please try again.',
+                variant: 'destructive',
+              });
+              setScanning(false);
+              setLoading(false);
+              return;
+            }
+
+            if (payload.e !== eventCode) {
+              toast({
+                title: 'Wrong Event',
+                description: 'This person is at a different event.',
+                variant: 'destructive',
+              });
+              setScanning(false);
+              setLoading(false);
+              return;
+            }
+
+            setLoading(false);
+            setScanning(false);
+            navigate('/match', { state: { peerToken: payload.t } });
+          } catch (error) {
+            console.error('Scan error:', error);
+            toast({
+              title: 'Error',
+              description: 'Failed to process scan. Please try again.',
+              variant: 'destructive',
+            });
+            setLoading(false);
+            setScanning(false);
+          }
+        },
+        () => {
+          // Ignore scanning errors, they happen constantly
+        }
+      );
+    } catch (error) {
+      console.error('Camera error:', error);
+      toast({
+        title: 'Camera Error',
+        description: 'Could not access camera. Please check permissions.',
+        variant: 'destructive',
+      });
+      setScanning(false);
     }
   };
 
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = z.string().uuid().safeParse(manualToken.trim());
-    if (parsed.success) {
-      navigate('/match', { state: { peerToken: parsed.data } });
-    } else {
-      setError('Invalid token');
+  const stopScanning = () => {
+    if (scannerRef.current && scanning) {
+      scannerRef.current.stop().then(() => {
+        setScanning(false);
+      }).catch((err) => {
+        // If already stopped, just update state
+        console.log('Scanner stop error:', err);
+        setScanning(false);
+      });
     }
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
-      {error && <Alert variant="error" className="w-full max-w-sm" children={error} />}
-      {error === 'This QR is expired or not for this event.' && (
-        <Button onClick={handleRetry}>Retry</Button>
-      )}
-      {loading && <Spinner />}
-      {!noCamera ? (
-        <div className="relative">
-          <div ref={scannerRef} />
-          <div className="pointer-events-none absolute inset-0 flex justify-between">
-            <div className="m-2 w-8 h-8 border-t-4 border-l-4 border-brand" />
-            <div className="m-2 w-8 h-8 border-t-4 border-r-4 border-brand" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-card">
+        <CardHeader className="text-center">
+          <BeepLogo variant="scan" className="w-16 h-16 mx-auto mb-4 text-primary" />
+          <CardTitle className="text-2xl">Scan a Beep Code</CardTitle>
+          <CardDescription>
+            Point your camera at someone's QR code to see your match
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div
+            ref={qrReaderRef}
+            id="qr-reader"
+            className={`w-full rounded-lg overflow-hidden ${scanning ? 'bg-black' : 'bg-muted'} aspect-square flex items-center justify-center`}
+          >
+            {!scanning && !loading && (
+              <Camera className="w-16 h-16 text-muted-foreground" />
+            )}
+            {loading && (
+              <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            )}
           </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between">
-            <div className="m-2 w-8 h-8 border-b-4 border-l-4 border-brand" />
-            <div className="m-2 w-8 h-8 border-b-4 border-r-4 border-brand" />
+
+          <div className="space-y-2">
+            {!scanning && !loading && (
+              <Button onClick={startScanning} className="w-full" size="lg">
+                <Camera className="mr-2" />
+                Start Camera
+              </Button>
+            )}
+            {scanning && (
+              <Button onClick={stopScanning} variant="destructive" className="w-full" size="lg">
+                Stop Scanning
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => navigate('/myqr')}
+              className="w-full"
+              disabled={loading}
+            >
+              Back to My Code
+            </Button>
           </div>
-        </div>
-      ) : (
-        <Card className="w-full max-w-sm">
-          <CardHeader>Enter code manually</CardHeader>
-          <CardContent>
-            <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
-              <Input
-                value={manualToken}
-                onChange={(e) => setManualToken(e.target.value)}
-                placeholder="Enter token"
-                label="Token"
-              />
-              <Button type="submit">Go</Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-      {!noCamera && (
-        <button
-          onClick={() => setNoCamera(true)}
-          className="text-sm underline"
-        >
-          Enter code manually
-        </button>
-      )}
-      <p className="text-xs text-slate-500">Move closer / Aim at the QR</p>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default Scan;

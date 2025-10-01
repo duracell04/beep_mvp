@@ -132,6 +132,7 @@ Unique real-world UX (BLE proximity + two-layer match model + event ops) that in
 - **Back-end:** Supabase (Postgres, Auth, Realtime) – secure, scalable, privacy-focused
 - **Infra:** Vercel/Fly.io for CI/CD, global edge
 - **Privacy:** Only hashed userID + answer vector stored; ISO-27001 hosting
+- **Data store:** Pluggable session storage – localStorage in-browser, optional HTTP adapter via `VITE_BACKEND_URL`
 
 **Planned:** Native wrapper via Capacitor for always-on BLE
 
