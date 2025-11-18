@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { rapidFireQuestions } from '@/data/rapidFireQuestions';
 import { ImportanceLevel } from '@/data/questions';
 import { useQuiz } from '@/contexts/QuizContext';
@@ -24,7 +26,7 @@ const DEFAULT_IMPORTANCE: ImportanceLevel = 'medium';
 const Quiz = () => {
   const { eventCode } = useEvent();
   const { answers, updateLayerA, updateLayerB } = useQuiz();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [layerAState, setLayerAState] = useState<Record<string, string>>(answers?.layerA ?? {});
   const [layerBState, setLayerBState] = useState<PreferenceState>(() => {
@@ -39,8 +41,13 @@ const Quiz = () => {
     return pref;
   });
 
+  useEffect(() => {
+    if (!eventCode) {
+      router.replace('/onboarding');
+    }
+  }, [eventCode, router]);
+
   if (!eventCode) {
-    navigate('/');
     return null;
   }
 
@@ -95,7 +102,7 @@ const Quiz = () => {
     const isLast = step === totalQuestions - 1;
     setTimeout(() => {
       if (isLast) {
-        navigate('/myqr');
+        router.push('/myqr');
       } else {
         setStep((prev) => Math.min(totalQuestions - 1, prev + 1));
       }
@@ -250,7 +257,7 @@ const Quiz = () => {
         </button>
         <button
           type="button"
-          onClick={() => navigate('/myqr')}
+          onClick={() => router.push('/myqr')}
           className="font-semibold uppercase tracking-[0.3em] text-emerald-600"
         >
           Jump to live badge

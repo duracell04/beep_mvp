@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useEvent } from '@/contexts/EventContext';
 import { BeepLogo } from '@/components/BeepLogo';
 import { Button } from '@/components/ui/button';
@@ -11,13 +13,13 @@ import { Loader2 } from 'lucide-react';
 
 const Admin = () => {
   const { eventCode, clearEvent } = useEvent();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [stats, setStats] = useState<{ participants: number; avgScore?: number; colors: { green: number; yellow: number; red: number } } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!eventCode) {
-      navigate('/');
+      router.replace('/onboarding');
       return;
     }
 
@@ -35,11 +37,11 @@ const Admin = () => {
     fetchStats();
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
-  }, [eventCode, navigate]);
+  }, [eventCode, router]);
 
   const handleLeaveEvent = () => {
     clearEvent();
-    navigate('/');
+    router.replace('/onboarding');
   };
 
   if (loading) {
@@ -126,11 +128,7 @@ const Admin = () => {
         </div>
 
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/myqr')}
-            className="flex-1"
-          >
+          <Button variant="outline" onClick={() => router.push('/myqr')} className="flex-1">
             Back to My Code
           </Button>
           <Button

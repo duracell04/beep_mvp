@@ -1,5 +1,7 @@
+'use client';
+
 import { FormEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useEvent } from '@/contexts/EventContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +11,7 @@ const Onboarding = () => {
   const [code, setCode] = useState('');
   const { setEventCode } = useEvent();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleJoin = (event?: FormEvent) => {
     event?.preventDefault();
@@ -24,7 +26,7 @@ const Onboarding = () => {
     }
 
     setEventCode(code);
-    navigate('/quiz');
+    router.push('/quiz');
   };
 
   return (

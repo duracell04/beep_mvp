@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useState, type ReactNode, useEffect } from 'react';
 import { QuizAnswers, LayerBAnswer, layerAQuestions, layerBQuestions } from '@/data/questions';
 

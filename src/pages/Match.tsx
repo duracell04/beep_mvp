@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useQuiz } from '@/contexts/QuizContext';
 import { useEvent } from '@/contexts/EventContext';
@@ -48,24 +50,20 @@ const buildConversationInsight = (me?: QuizAnswers | null, peer?: QuizAnswers | 
   return defaultInsight;
 };
 
-type MatchLocationState = {
-  peerToken?: string;
-};
-
 const Match = () => {
-  const { state } = useLocation() as { state?: MatchLocationState };
-  const peerToken = state?.peerToken;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const peerToken = searchParams.get('peer');
   const { answers } = useQuiz();
   const { eventCode } = useEvent();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [result, setResult] = useState<AlgoMatchResult | null>(null);
   const [insight, setInsight] = useState(defaultInsight);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!peerToken || !answers || !eventCode) {
-      navigate('/');
+      router.replace('/scan');
       return;
     }
 
@@ -80,7 +78,7 @@ const Match = () => {
             description: 'We could not retrieve that person. Please scan again.',
             variant: 'destructive',
           });
-          navigate('/scan');
+          router.replace('/scan');
           return;
         }
 
@@ -98,7 +96,7 @@ const Match = () => {
           description: 'Something went wrong. Please try scanning again.',
           variant: 'destructive',
         });
-        navigate('/scan');
+        router.replace('/scan');
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -110,7 +108,7 @@ const Match = () => {
     return () => {
       cancelled = true;
     };
-  }, [peerToken, answers, eventCode, navigate, toast]);
+  }, [peerToken, answers, eventCode, router, toast]);
 
   if (loading) {
     return (

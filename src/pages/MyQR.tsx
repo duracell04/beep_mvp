@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Copy, Download } from 'lucide-react';
 import { useEvent } from '@/contexts/EventContext';
@@ -14,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 const MyQR = () => {
   const { eventCode } = useEvent();
   const { answers, isComplete } = useQuiz();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { toast } = useToast();
   const [qrValue, setQrValue] = useState('');
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ const MyQR = () => {
 
   useEffect(() => {
     if (!eventCode || !isComplete || !answers) {
-      navigate('/');
+      router.replace('/onboarding');
       return;
     }
 
@@ -53,7 +55,7 @@ const MyQR = () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [eventCode, isComplete, answers, navigate, toast]);
+  }, [eventCode, isComplete, answers, router, toast]);
 
   const copyLink = () => {
     if (!qrValue) return;
@@ -134,7 +136,7 @@ const MyQR = () => {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/scan')}
+            onClick={() => router.push('/scan')}
             className="beep-sonar w-full max-w-sm rounded-full bg-white px-8 py-5 text-2xl font-semibold uppercase tracking-[0.4em] text-slate-900 shadow-xl transition hover:-translate-y-0.5"
           >
             Beep someone

@@ -57,7 +57,7 @@ describe('match()', () => {
 
     const peer: QuizAnswers = {
       ...baseAnswers,
-      layerA: { a1: 'x', a2: 'z' },
+      layerA: { a1: 'x', a2: 'y' },
       layerB: [
         { questionId: 'b1', value: 'no', importance: 'medium', dealBreaker: false },
         { questionId: 'b2', value: 'often', importance: 'medium', dealBreaker: false },

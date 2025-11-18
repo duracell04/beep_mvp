@@ -1,5 +1,7 @@
+'use client';
+
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Camera, Loader2 } from 'lucide-react';
 import { useEvent } from '@/contexts/EventContext';
@@ -12,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 const Scan = () => {
   const { eventCode } = useEvent();
   const { answers } = useQuiz();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { toast } = useToast();
 
   const [scanning, setScanning] = useState(false);
@@ -24,7 +26,7 @@ const Scan = () => {
 
   useEffect(() => {
     if (!eventCode || !answers) {
-      navigate('/');
+      router.replace('/onboarding');
       return;
     }
 
@@ -36,7 +38,7 @@ const Scan = () => {
           .catch(() => undefined);
       }
     };
-  }, [eventCode, answers, navigate, scanning]);
+  }, [eventCode, answers, router, scanning]);
 
   const handleScanSuccess = async (decoded: string) => {
     setLoading(true);
@@ -57,7 +59,7 @@ const Scan = () => {
       }
       setLoading(false);
       setScanning(false);
-      navigate('/match', { state: { peerToken: payload.t } });
+      router.push(`/match?peer=${encodeURIComponent(payload.t)}`);
     } catch (error) {
       console.error('Scan error', error);
       toast({
@@ -110,7 +112,7 @@ const Scan = () => {
       });
       return;
     }
-    navigate('/match', { state: { peerToken: manualToken.trim() } });
+    router.push(`/match?peer=${encodeURIComponent(manualToken.trim())}`);
   };
 
   return (

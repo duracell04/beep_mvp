@@ -2,6 +2,7 @@ node_modules/
 .pnpm-store/
 .env
 .env.local
+.next/
 supabase/*
 !supabase/types.generated.ts
 server/node_modules

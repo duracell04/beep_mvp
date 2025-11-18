@@ -1,13 +1,19 @@
-// DevNav.tsx – dev navigation header
-import { Link } from 'react-router-dom';
+'use client';
 
+import Link from 'next/link';
+
+/**
+ * Lightweight nav helpers rendered only in development to jump between flows quickly.
+ */
 export default function DevNav() {
   return (
-    <nav className="flex gap-4 p-2 bg-gray-200">
-      <Link to="/onboarding">Onboarding</Link>
-      <Link to="/quiz">Quiz</Link>
-      <Link to="/match">Match</Link>
-      <Link to="/admin">Admin</Link>
+    <nav className="flex gap-4 bg-gray-200 p-2 text-sm text-gray-800">
+      <Link href="/onboarding">Onboarding</Link>
+      <Link href="/quiz">Quiz</Link>
+      <Link href="/myqr">My QR</Link>
+      <Link href="/scan">Scan</Link>
+      <Link href="/match">Match</Link>
+      <Link href="/admin">Admin</Link>
     </nav>
   );
 }

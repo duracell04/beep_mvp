@@ -20,7 +20,7 @@ export interface Store {
   getStats(eventCode: string): Promise<Stats>;
 }
 
-const backend = import.meta.env.VITE_BACKEND_URL as string | undefined;
+const backend = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export const store: Store = backend ? createHttpStore(backend) : createLocalStore();
 

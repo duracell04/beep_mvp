@@ -1,4 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+'use client';
+
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 interface MatchResultProps {
@@ -16,7 +18,7 @@ const colorStop: Record<MatchResultProps['color'], string> = {
 };
 
 const MatchResult = ({ color, score, topic, sparkLine, promptLine }: MatchResultProps) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const percent = Math.max(85, Math.round(score * 100));
 
   const copyHook = () => {
@@ -54,7 +56,7 @@ const MatchResult = ({ color, score, topic, sparkLine, promptLine }: MatchResult
           <Button
             variant="outline"
             className="flex-1 rounded-full border-none bg-white text-emerald-600"
-            onClick={() => navigate('/scan')}
+            onClick={() => router.push('/scan')}
           >
             Beep another
           </Button>
