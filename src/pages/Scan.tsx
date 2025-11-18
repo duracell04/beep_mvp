@@ -7,7 +7,6 @@ import { QrPayload } from '../schemas/qr';
 import { z } from 'zod';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import Alert from '../components/ui/Alert';
 
 export default function Scan() {
@@ -123,49 +122,63 @@ export default function Scan() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
-      {error && <Alert variant="error" className="w-full max-w-sm" children={error} />}
-      {error === 'This QR is expired or not for this event.' && (
-        <Button onClick={handleRetry}>Retry</Button>
-      )}
-      {loading && <Spinner />}
-      {!noCamera ? (
-        <div className="relative">
-          <div ref={scannerRef} />
-          <div className="pointer-events-none absolute inset-0 flex justify-between">
-            <div className="m-2 w-8 h-8 border-t-4 border-l-4 border-brand" />
-            <div className="m-2 w-8 h-8 border-t-4 border-r-4 border-brand" />
+    <div className="space-y-4 py-6">
+      <section className="rounded-[32px] border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <p className="text-xs uppercase tracking-[0.5em] text-slate-400">Camera mode</p>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-900">BEEP SOMEONE</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Point at their badge and we instantly script the follow-up conversation.
+        </p>
+      </section>
+
+      <div className="flex flex-col items-center gap-4">
+        {error && <Alert variant="error" className="w-full max-w-md" children={error} />}
+        {error === 'This QR is expired or not for this event.' && (
+          <Button onClick={handleRetry}>Retry</Button>
+        )}
+        {loading && <Spinner />}
+        {!noCamera ? (
+          <div className="w-full max-w-md rounded-[32px] border border-slate-200 bg-white p-6 text-center shadow-lg">
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">Camera is live</p>
+            <p className="mt-2 text-sm text-slate-500">Line up the QR until the corners glow.</p>
+            <div className="relative mt-4 rounded-3xl border border-slate-900/10 bg-slate-900/80 p-3">
+              <div ref={scannerRef} className="aspect-square rounded-2xl bg-black" />
+              <div className="pointer-events-none absolute inset-0 flex justify-between">
+                <div className="m-4 h-10 w-10 border-t-4 border-l-4 border-emerald-400" />
+                <div className="m-4 h-10 w-10 border-t-4 border-r-4 border-emerald-400" />
+              </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between">
+                <div className="m-4 h-10 w-10 border-b-4 border-l-4 border-emerald-400" />
+                <div className="m-4 h-10 w-10 border-b-4 border-r-4 border-emerald-400" />
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-slate-500">Move closer - keep both badges inside the frame.</p>
           </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-between">
-            <div className="m-2 w-8 h-8 border-b-4 border-l-4 border-brand" />
-            <div className="m-2 w-8 h-8 border-b-4 border-r-4 border-brand" />
-          </div>
-        </div>
-      ) : (
-        <Card className="w-full max-w-sm">
-          <CardHeader>Enter code manually</CardHeader>
-          <CardContent>
-            <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
+        ) : (
+          <div className="w-full max-w-md rounded-[32px] border border-slate-200 bg-white p-6 shadow-lg">
+            <p className="text-lg font-semibold text-slate-900">Enter code manually</p>
+            <form onSubmit={handleManualSubmit} className="mt-4 flex flex-col gap-4">
               <Input
                 value={manualToken}
                 onChange={(e) => setManualToken(e.target.value)}
-                placeholder="Enter token"
+                placeholder="Paste token"
                 label="Token"
               />
-              <Button type="submit">Go</Button>
+              <Button type="submit" className="rounded-full">
+                Go
+              </Button>
             </form>
-          </CardContent>
-        </Card>
-      )}
-      {!noCamera && (
-        <button
-          onClick={() => setNoCamera(true)}
-          className="text-sm underline"
-        >
-          Enter code manually
-        </button>
-      )}
-      <p className="text-xs text-slate-500">Move closer / Aim at the QR</p>
+          </div>
+        )}
+        {!noCamera && (
+          <button
+            onClick={() => setNoCamera(true)}
+            className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500"
+          >
+            Prefer to type the code?
+          </button>
+        )}
+      </div>
     </div>
   );
 }

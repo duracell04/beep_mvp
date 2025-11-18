@@ -35,3 +35,13 @@ body {
 .beep-pulse {
   animation: beep-pulse 2s ease-in-out infinite;
 }
+
+@keyframes beep-sonar {
+  0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+  70% { box-shadow: 0 0 0 28px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+
+.beep-sonar {
+  animation: beep-sonar 2.2s ease-out infinite;
+}
