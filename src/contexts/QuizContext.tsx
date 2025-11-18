@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode, useEffect } from 'react';
-import { QuizAnswers, LayerBAnswer } from '@/data/questions';
+import { QuizAnswers, LayerBAnswer, layerAQuestions, layerBQuestions } from '@/data/questions';
 
 interface QuizContextType {
   answers: QuizAnswers | null;
@@ -36,7 +36,14 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
 
   const updateLayerB = (answer: LayerBAnswer) => {
     setAnswers(prev => {
-      if (!prev) return prev;
+      if (!prev) {
+        const eventCode = localStorage.getItem('beep_event_code') || '';
+        return {
+          layerA: {},
+          layerB: [answer],
+          eventCode,
+        };
+      }
       const existingIndex = prev.layerB.findIndex(a => a.questionId === answer.questionId);
       const newLayerB = [...prev.layerB];
       if (existingIndex >= 0) {
@@ -55,8 +62,8 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
 
   const isComplete = !!(
     answers &&
-    Object.keys(answers.layerA).length === 4 &&
-    answers.layerB.length === 5
+    Object.keys(answers.layerA).length === layerAQuestions.length &&
+    answers.layerB.length === layerBQuestions.length
   );
 
   return (

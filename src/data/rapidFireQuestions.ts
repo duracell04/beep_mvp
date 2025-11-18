@@ -10,6 +10,9 @@ export interface RapidQuestion {
   question: string;
   description?: string;
   options: RapidOption[];
+  layer: 'A' | 'B';
+  weight?: number;
+  allowDealBreaker?: boolean;
   sparkTemplate: string;
   promptTemplate: string;
 }
@@ -23,6 +26,8 @@ export const rapidFireQuestions: RapidQuestion[] = [
     badge: 'Role Signal',
     question: 'Department?',
     description: 'Instantly show cross-functional coverage for the buyer.',
+    layer: 'A',
+    weight: 1.1,
     options: [
       { value: 'sales', label: 'Sales', note: 'Quota crushers & demo pros' },
       { value: 'tech', label: 'Product & Tech', note: 'Builders, PMs, data' },
@@ -37,6 +42,8 @@ export const rapidFireQuestions: RapidQuestion[] = [
     badge: 'Culture Cue',
     question: 'Office superpower?',
     description: 'Make the icebreaker playful but still work-relevant.',
+    layer: 'A',
+    weight: 1.0,
     options: [
       { value: 'excel', label: 'Excel Wizard', note: 'Pivot tables on demand' },
       { value: 'coffee', label: 'Coffee Brewer', note: 'Keeps the floor buzzing' },
@@ -51,6 +58,8 @@ export const rapidFireQuestions: RapidQuestion[] = [
     badge: 'Intent',
     question: 'Mission for today?',
     description: 'Signals what they expect from the event.',
+    layer: 'A',
+    weight: 1.2,
     options: [
       { value: 'pipeline', label: 'Pipeline leads', note: 'Chasing new accounts' },
       { value: 'implementation', label: 'Implementation intel', note: 'Playbook nerds' },
@@ -64,6 +73,8 @@ export const rapidFireQuestions: RapidQuestion[] = [
     id: 'cadence',
     badge: 'Collaboration',
     question: 'Decision cadence?',
+    layer: 'A',
+    weight: 0.8,
     options: [
       { value: 'ship', label: 'Ship-first, iterate', note: 'Bias for action' },
       { value: 'data', label: 'Need the data room', note: 'Receipts or bust' },
@@ -76,6 +87,8 @@ export const rapidFireQuestions: RapidQuestion[] = [
     id: 'work_model',
     badge: 'Ways of Working',
     question: 'Hybrid handshake?',
+    layer: 'A',
+    weight: 0.9,
     options: [
       { value: 'remote', label: 'Remote-first', note: 'Async rituals' },
       { value: 'hybrid', label: '3-day hybrid', note: 'Most teams follow this' },
@@ -88,6 +101,8 @@ export const rapidFireQuestions: RapidQuestion[] = [
     id: 'conversation_stage',
     badge: 'Event Flow',
     question: 'Best place to host a convo?',
+    layer: 'B',
+    allowDealBreaker: true,
     options: [
       { value: 'demo', label: 'Product demo bar', note: 'Hands-on energy' },
       { value: 'roundtable', label: 'Roundtable huddles', note: 'Curated peers' },
@@ -100,6 +115,7 @@ export const rapidFireQuestions: RapidQuestion[] = [
     id: 'toolkit',
     badge: 'Stack Pride',
     question: 'Internal tool flex?',
+    layer: 'B',
     options: [
       { value: 'salesforce', label: 'Salesforce dashboards', note: 'Revenue ops' },
       { value: 'notion', label: 'Notion wikis', note: 'Live playbooks' },
@@ -113,6 +129,7 @@ export const rapidFireQuestions: RapidQuestion[] = [
     id: 'celebration',
     badge: 'Team Rituals',
     question: 'Win celebration style?',
+    layer: 'B',
     options: [
       { value: 'data_drop', label: 'Data drop in Slack', note: "Receipts or it didn't happen" },
       { value: 'espresso', label: 'Espresso run', note: 'Caffeine lap for the crew' },
@@ -125,6 +142,7 @@ export const rapidFireQuestions: RapidQuestion[] = [
     id: 'future_topic',
     badge: 'Future Lens',
     question: 'Future-of-work obsession?',
+    layer: 'B',
     options: [
       { value: 'copilots', label: 'AI copilots for ops', note: 'Smarter workflows' },
       { value: 'revops', label: 'Revenue ops automation', note: 'Less swivel-chair' },
@@ -138,6 +156,8 @@ export const rapidFireQuestions: RapidQuestion[] = [
     id: 'icebreaker',
     badge: 'Conversation Style',
     question: 'How do you open?',
+    layer: 'B',
+    allowDealBreaker: true,
     options: [
       { value: 'tactical', label: 'Tactical question', note: 'Get into the work' },
       { value: 'challenge', label: 'Bold challenge', note: 'Throw a lightning round' },
