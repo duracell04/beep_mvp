@@ -14,20 +14,37 @@ interface QuizContextType {
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
 export const QuizProvider = ({ children }: { children: ReactNode }) => {
-  const [answers, setAnswers] = useState<QuizAnswers | null>(() => {
-    const saved = localStorage.getItem('beep_quiz_answers');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [answers, setAnswers] = useState<QuizAnswers | null>(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const saved = localStorage.getItem('beep_quiz_answers');
+    setAnswers(saved ? JSON.parse(saved) : null);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
     if (answers) {
       localStorage.setItem('beep_quiz_answers', JSON.stringify(answers));
+    } else {
+      localStorage.removeItem('beep_quiz_answers');
     }
   }, [answers]);
 
+  const getStoredEventCode = () => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+    return localStorage.getItem('beep_event_code') || '';
+  };
+
   const updateLayerA = (questionId: string, value: string) => {
+    const eventCode = getStoredEventCode();
     setAnswers(prev => {
-      const eventCode = localStorage.getItem('beep_event_code') || '';
       return {
         layerA: { ...(prev?.layerA || {}), [questionId]: value },
         layerB: prev?.layerB || [],
@@ -37,9 +54,9 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateLayerB = (answer: LayerBAnswer) => {
+    const eventCode = getStoredEventCode();
     setAnswers(prev => {
       if (!prev) {
-        const eventCode = localStorage.getItem('beep_event_code') || '';
         return {
           layerA: {},
           layerB: [answer],
@@ -58,6 +75,9 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const clearAnswers = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
     localStorage.removeItem('beep_quiz_answers');
     setAnswers(null);
   };

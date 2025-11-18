@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 interface EventContextType {
   eventCode: string | null;
@@ -11,16 +11,27 @@ interface EventContextType {
 const EventContext = createContext<EventContextType | undefined>(undefined);
 
 export const EventProvider = ({ children }: { children: ReactNode }) => {
-  const [eventCode, setEventCodeState] = useState<string | null>(() => {
-    return localStorage.getItem('beep_event_code');
-  });
+  const [eventCode, setEventCodeState] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    setEventCodeState(localStorage.getItem('beep_event_code'));
+  }, []);
 
   const setEventCode = (code: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
     localStorage.setItem('beep_event_code', code);
     setEventCodeState(code);
   };
 
   const clearEvent = () => {
+    if (typeof window === 'undefined') {
+      return;
+    }
     localStorage.removeItem('beep_event_code');
     localStorage.removeItem('beep_quiz_answers');
     setEventCodeState(null);
