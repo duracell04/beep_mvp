@@ -1,73 +1,140 @@
-// src/pages/Match.tsx
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useQuiz } from '../contexts/QuizContext';
-import MatchResult from '../components/MatchResult';
-import { computeMatch, type MatchOutcome } from '../algo/matcher';
-import { getPeerAnswers } from '../api/sessions';
-import { rapidFireQuestions, describeSharedAnswer } from '../data/rapidFireQuestions';
-
-type StoredAnswer = { value?: string | number };
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { useQuiz } from '@/contexts/QuizContext';
+import { useEvent } from '@/contexts/EventContext';
+import { useToast } from '@/hooks/use-toast';
+import { match, type MatchResult as AlgoMatchResult } from '@/algo/matcher';
+import { getPeerAnswers } from '@/api/sessions';
+import { withEventCode } from '@/lib/session';
+import MatchResult from '@/components/MatchResult';
+import type { QuizAnswers } from '@/data/questions';
+import { rapidFireQuestions, describeSharedAnswer } from '@/data/rapidFireQuestions';
 
 const defaultInsight = {
   topic: 'Shared curiosity',
   sparkLine: 'You both just unlocked Active Mode to meet someone new.',
-  promptLine: 'Ask them: What would make this summit a breakout success?'
+  promptLine: 'Ask them: What would make this summit a breakout success?',
 };
 
-function buildConversationInsight(
-  mine: Record<string, StoredAnswer | undefined>,
-  peer: Record<string, StoredAnswer | undefined>
-) {
-  for (const question of rapidFireQuestions) {
-    const myValue = mine[question.id]?.value;
-    const peerValue = peer[question.id]?.value;
-    if (myValue && peerValue && myValue === peerValue) {
-      const option = question.options.find((opt) => opt.value === myValue);
-      const label = option?.label ?? String(myValue);
-      return describeSharedAnswer(question.id, label);
+const questionMeta = new Map(rapidFireQuestions.map((question) => [question.id, question]));
+
+const buildConversationInsight = (me?: QuizAnswers | null, peer?: QuizAnswers | null) => {
+  if (!me || !peer) {
+    return defaultInsight;
+  }
+
+  for (const [questionId, value] of Object.entries(me.layerA)) {
+    if (value && peer.layerA[questionId] === value) {
+      const label =
+        questionMeta.get(questionId)?.options.find((option) => option.value === value)?.label ??
+        value;
+      return describeSharedAnswer(questionId, label);
     }
   }
-  return defaultInsight;
-}
 
-export default function Match() {
-  const location = useLocation() as { state?: { peerToken?: string } };
-  const peerToken = location.state?.peerToken;
+  const peerPreferences = new Map(peer.layerB.map((answer) => [answer.questionId, answer.value]));
+  for (const answer of me.layerB) {
+    const peerValue = peerPreferences.get(answer.questionId);
+    if (answer.value && peerValue === answer.value) {
+      const label =
+        questionMeta
+          .get(answer.questionId)
+          ?.options.find((option) => option.value === answer.value)?.label ?? answer.value;
+      return describeSharedAnswer(answer.questionId, label);
+    }
+  }
+
+  return defaultInsight;
+};
+
+type MatchLocationState = {
+  peerToken?: string;
+};
+
+const Match = () => {
+  const { state } = useLocation() as { state?: MatchLocationState };
+  const peerToken = state?.peerToken;
   const { answers } = useQuiz();
-  const [result, setResult] = useState<{
-    outcome: MatchOutcome;
-    topic: string;
-    sparkLine: string;
-    promptLine: string;
-  } | null>(null);
+  const { eventCode } = useEvent();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [result, setResult] = useState<AlgoMatchResult | null>(null);
+  const [insight, setInsight] = useState(defaultInsight);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      if (!peerToken) return;
-      const peer = await getPeerAnswers(peerToken);
-      if (peer) {
-        const r = computeMatch(
-          answers as unknown as Record<string, unknown>,
-          peer as Record<string, unknown>
-        );
-        const insight = buildConversationInsight(
-          answers as Record<string, StoredAnswer>,
-          peer as Record<string, StoredAnswer>
-        );
-        setResult({ outcome: r, ...insight });
-      }
-    })();
-  }, [peerToken, answers]);
+    if (!peerToken || !answers || !eventCode) {
+      navigate('/');
+      return;
+    }
 
-  if (!result) return <div className="p-4">Loading...</div>;
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const peerAnswers = await getPeerAnswers(peerToken);
+        if (!peerAnswers || peerAnswers.eventCode !== eventCode) {
+          toast({
+            title: 'No match found',
+            description: 'We could not retrieve that person. Please scan again.',
+            variant: 'destructive',
+          });
+          navigate('/scan');
+          return;
+        }
+
+        const computed = match(withEventCode(answers, eventCode), peerAnswers);
+        const story = buildConversationInsight(answers, peerAnswers);
+
+        if (!cancelled) {
+          setResult(computed);
+          setInsight(story);
+        }
+      } catch (error) {
+        console.error('Failed to compute match:', error);
+        toast({
+          title: 'Error',
+          description: 'Something went wrong. Please try scanning again.',
+          variant: 'destructive',
+        });
+        navigate('/scan');
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [peerToken, answers, eventCode, navigate, toast]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!result) {
+    return null;
+  }
+
   return (
-    <MatchResult
-      color={result.outcome.color}
-      score={result.outcome.score}
-      topic={result.topic}
-      sparkLine={result.sparkLine}
-      promptLine={result.promptLine}
-    />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <MatchResult
+        color={result.color}
+        score={result.score}
+        topic={insight.topic}
+        sparkLine={insight.sparkLine}
+        promptLine={insight.promptLine}
+      />
+    </div>
   );
-}
+};
+
+export default Match;

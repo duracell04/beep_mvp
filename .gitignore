@@ -6,3 +6,9 @@ supabase/*
 !supabase/types.generated.ts
 server/node_modules
 server/beep.sqlite
+
+# prevent PR failures
+bun.lockb
+.pnpm-store/
+server/node_modules
+server/beep.sqlite

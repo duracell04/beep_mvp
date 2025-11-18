@@ -1,88 +1,68 @@
-// Reusable beep logo with variants that inherit currentColor.
-// Props: variant ('ping' | 'traffic' | 'scan' | 'monogram'), withWordmark, className.
-type Variant = 'ping' | 'traffic' | 'scan' | 'monogram';
-
-interface Props {
-  variant?: Variant;
-  withWordmark?: boolean;
+interface BeepLogoProps {
+  variant?: 'ping' | 'traffic' | 'scan' | 'monogram';
   className?: string;
-  sizeEm?: number; // optional; defaults to 1.6
 }
 
-function PingMark({ sizeEm = 1.6 }: { sizeEm?: number }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
-         width={`${sizeEm}em`} height={`${sizeEm}em`} aria-hidden="true">
-      <circle cx="22" cy="32" r="6" fill="currentColor"/>
-      <path d="M32 24 A10 10 0 0 1 32 40" fill="none"
-            stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
-      <path d="M38 18 A16 16 0 0 1 38 46" fill="none"
-            stroke="currentColor" strokeWidth="4" strokeLinecap="round" opacity=".6"/>
-      <path d="M44 12 A22 22 0 0 1 44 52" fill="none"
-            stroke="currentColor" strokeWidth="4" strokeLinecap="round" opacity=".3"/>
-    </svg>
-  );
-}
+export const BeepLogo = ({ variant = 'ping', className = '' }: BeepLogoProps) => {
+  if (variant === 'monogram') {
+    return (
+      <svg
+        viewBox="0 0 100 100"
+        className={className}
+        xmlns="http://www.w3.org/2000/svg"
+        fill="currentColor"
+      >
+        <text x="50" y="70" fontSize="60" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">
+          B
+        </text>
+      </svg>
+    );
+  }
 
-function TrafficMark({ sizeEm = 1.6 }: { sizeEm?: number }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
-         width={`${sizeEm}em`} height={`${sizeEm}em`} aria-hidden="true">
-      <rect x="18" y="8" width="28" height="48" rx="14"
-            fill="none" stroke="currentColor" strokeWidth="4"/>
-      <circle cx="32" cy="20" r="6" fill="var(--beep-top, currentColor)" opacity=".45"/>
-      <circle cx="32" cy="32" r="6" fill="var(--beep-mid, currentColor)" opacity=".7"/>
-      <circle cx="32" cy="44" r="6" fill="var(--beep-bot, currentColor)"/>
-    </svg>
-  );
-}
+  if (variant === 'traffic') {
+    return (
+      <svg
+        viewBox="0 0 100 140"
+        className={className}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect x="35" y="10" width="30" height="80" rx="15" fill="currentColor" fillOpacity="0.2" />
+        <circle cx="50" cy="30" r="8" fill="hsl(var(--success))" />
+        <circle cx="50" cy="50" r="8" fill="hsl(var(--warning))" />
+        <circle cx="50" cy="70" r="8" fill="hsl(var(--destructive))" />
+      </svg>
+    );
+  }
 
-function ScanMark({ sizeEm = 1.6 }: { sizeEm?: number }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
-         width={`${sizeEm}em`} height={`${sizeEm}em`} aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
-        <path d="M12 22 V12 H22" /><path d="M42 12 H52 V22" />
-        <path d="M12 42 V52 H22" /><path d="M52 42 V52 H42" />
-      </g>
-      <circle cx="32" cy="32" r="6" fill="currentColor"/>
-    </svg>
-  );
-}
+  if (variant === 'scan') {
+    return (
+      <svg
+        viewBox="0 0 100 100"
+        className={className}
+        xmlns="http://www.w3.org/2000/svg"
+        stroke="currentColor"
+        fill="none"
+        strokeWidth="4"
+      >
+        <rect x="10" y="10" width="80" height="80" rx="8" />
+        <rect x="25" y="25" width="15" height="15" fill="currentColor" />
+        <rect x="25" y="60" width="15" height="15" fill="currentColor" />
+        <rect x="60" y="25" width="15" height="15" fill="currentColor" />
+        <rect x="60" y="60" width="15" height="15" fill="currentColor" />
+      </svg>
+    );
+  }
 
-function MonogramMark({ sizeEm = 1.6 }: { sizeEm?: number }) {
+  // ping variant (default)
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"
-         width={`${sizeEm}em`} height={`${sizeEm}em`} aria-hidden="true">
-      <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="4"/>
-      <rect x="24" y="18" width="8" height="28" rx="4" fill="currentColor"/>
-      <circle cx="36" cy="32" r="10" fill="none" stroke="currentColor" strokeWidth="8"/>
-    </svg>
-  );
-}
-
-export default function BeepLogo({
-  variant = 'ping',
-  withWordmark = false,
-  className = '',
-  sizeEm = 1.6,
-}: Props) {
-  const Mark =
-    variant === 'traffic' ? TrafficMark :
-    variant === 'scan'    ? ScanMark    :
-    variant === 'monogram'? MonogramMark: PingMark;
-
-  return (
-    <span
-      className={`inline-flex items-center gap-[0.55ch] text-slate-900 ${className}`}
-      role="img" aria-label="beep"
+    <svg
+      viewBox="0 0 100 100"
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <Mark sizeEm={sizeEm} />
-      {withWordmark && (
-        <strong style={{ font: '600 1rem/1 system-ui,Segoe UI,Inter,Arial' }}>
-          beep
-        </strong>
-      )}
-    </span>
+      <circle cx="50" cy="50" r="20" fill="currentColor" />
+      <circle cx="50" cy="50" r="30" fill="currentColor" fillOpacity="0.3" className="animate-ping" />
+      <circle cx="50" cy="50" r="40" fill="currentColor" fillOpacity="0.1" className="animate-pulse-slow" />
+    </svg>
   );
-}
+};

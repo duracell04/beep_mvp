@@ -1,42 +1,75 @@
-import React, { createContext, useState, ReactNode, useContext } from 'react';
-import type { UserAnswer, ImportanceLevel } from '../data/types';
+import { createContext, useContext, useState, type ReactNode, useEffect } from 'react';
+import { QuizAnswers, LayerBAnswer } from '@/data/questions';
 
-interface QuizCtx {
-  step: number;
-  setStep: (n:number)=>void;
-  answers: Record<string, UserAnswer>;
-  setAnswerValue: (id:string, val:string|number)=>void;
-  setImportance: (id:string, lvl:ImportanceLevel)=>void;
-  toggleDealBreaker: (id:string)=>void;
+interface QuizContextType {
+  answers: QuizAnswers | null;
+  updateLayerA: (questionId: string, value: string) => void;
+  updateLayerB: (answer: LayerBAnswer) => void;
+  clearAnswers: () => void;
+  isComplete: boolean;
 }
 
-const QuizContext = createContext<QuizCtx | undefined>(undefined);
+const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
-export const QuizProvider:React.FC<{children:ReactNode}> = ({children})=>{
-  const [step,setStep] = useState(0);
-  const [answers,setAnswers] = useState<Record<string,UserAnswer>>({});
+export const QuizProvider = ({ children }: { children: ReactNode }) => {
+  const [answers, setAnswers] = useState<QuizAnswers | null>(() => {
+    const saved = localStorage.getItem('beep_quiz_answers');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  const setAnswerValue = (id:string,value:string|number)=>{
-    setAnswers(p=>({ ...p, [id]:{ ...p[id], value, importance: p[id]?.importance ?? 3 } }));
+  useEffect(() => {
+    if (answers) {
+      localStorage.setItem('beep_quiz_answers', JSON.stringify(answers));
+    }
+  }, [answers]);
+
+  const updateLayerA = (questionId: string, value: string) => {
+    setAnswers(prev => {
+      const eventCode = localStorage.getItem('beep_event_code') || '';
+      return {
+        layerA: { ...(prev?.layerA || {}), [questionId]: value },
+        layerB: prev?.layerB || [],
+        eventCode,
+      };
+    });
   };
 
-  const setImportance = (id:string,lvl:ImportanceLevel)=>{
-    setAnswers(p=>({ ...p, [id]:{ ...p[id], importance:lvl }}));
+  const updateLayerB = (answer: LayerBAnswer) => {
+    setAnswers(prev => {
+      if (!prev) return prev;
+      const existingIndex = prev.layerB.findIndex(a => a.questionId === answer.questionId);
+      const newLayerB = [...prev.layerB];
+      if (existingIndex >= 0) {
+        newLayerB[existingIndex] = answer;
+      } else {
+        newLayerB.push(answer);
+      }
+      return { ...prev, layerB: newLayerB };
+    });
   };
 
-  const toggleDealBreaker = (id:string)=>{
-    setAnswers(p=>({ ...p, [id]:{ ...p[id], isDealBreaker:!p[id]?.isDealBreaker }}));
+  const clearAnswers = () => {
+    localStorage.removeItem('beep_quiz_answers');
+    setAnswers(null);
   };
+
+  const isComplete = !!(
+    answers &&
+    Object.keys(answers.layerA).length === 4 &&
+    answers.layerB.length === 5
+  );
 
   return (
-    <QuizContext.Provider value={{step,setStep,answers,setAnswerValue,setImportance,toggleDealBreaker}}>
+    <QuizContext.Provider value={{ answers, updateLayerA, updateLayerB, clearAnswers, isComplete }}>
       {children}
     </QuizContext.Provider>
   );
 };
 
-export const useQuiz=()=>{
-  const ctx = useContext(QuizContext);
-  if(!ctx) throw new Error('useQuiz outside provider');
-  return ctx;
+export const useQuiz = () => {
+  const context = useContext(QuizContext);
+  if (!context) {
+    throw new Error('useQuiz must be used within QuizProvider');
+  }
+  return context;
 };

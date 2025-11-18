@@ -1,8 +1,7 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from './ui/Button';
+import { Button } from '@/components/ui/button';
 
-interface Props {
+interface MatchResultProps {
   color: 'green' | 'yellow' | 'red';
   score: number;
   topic: string;
@@ -10,31 +9,34 @@ interface Props {
   promptLine: string;
 }
 
-export default function MatchResult({ color, score, topic, sparkLine, promptLine }: Props) {
-  const nav = useNavigate();
-  const displayPercent = Math.max(85, Math.round(score * 100));
+const colorStop: Record<MatchResultProps['color'], string> = {
+  green: 'from-emerald-500 via-emerald-500 to-lime-400',
+  yellow: 'from-amber-400 via-amber-400 to-yellow-300',
+  red: 'from-rose-500 via-rose-500 to-pink-400',
+};
+
+const MatchResult = ({ color, score, topic, sparkLine, promptLine }: MatchResultProps) => {
+  const navigate = useNavigate();
+  const percent = Math.max(85, Math.round(score * 100));
+
   const copyHook = () => {
-    const payload = `${sparkLine} ${promptLine}`;
-    navigator.clipboard?.writeText(payload).catch(() => {});
+    navigator.clipboard?.writeText(`${sparkLine} ${promptLine}`).catch(() => undefined);
   };
 
   return (
     <div
       data-match-color={color}
-      className="relative overflow-hidden rounded-[32px] bg-gradient-to-b from-emerald-500 via-emerald-500 to-lime-400 p-8 text-white shadow-2xl"
+      className={`relative w-full max-w-2xl overflow-hidden rounded-[32px] bg-gradient-to-b ${colorStop[color]} p-8 text-white shadow-2xl`}
     >
       <div className="pointer-events-none absolute inset-0 opacity-30">
         <div className="h-full w-full bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_55%)]" />
       </div>
-
       <div className="relative flex flex-col items-center gap-6 text-center">
-        <p className="text-xs uppercase tracking-[0.6em] text-white/70">
-          Magic moment
-        </p>
+        <p className="text-xs uppercase tracking-[0.6em] text-white/70">Magic moment</p>
         <h1 className="text-4xl font-semibold">High compatibility!</h1>
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-6">
           <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-white/70 bg-white/10 text-5xl font-black">
-            {displayPercent}%
+            {percent}%
           </div>
           <div className="text-left">
             <p className="text-sm uppercase tracking-[0.4em] text-white/80">Break the Ice</p>
@@ -52,7 +54,7 @@ export default function MatchResult({ color, score, topic, sparkLine, promptLine
           <Button
             variant="outline"
             className="flex-1 rounded-full border-none bg-white text-emerald-600"
-            onClick={() => nav('/scan')}
+            onClick={() => navigate('/scan')}
           >
             Beep another
           </Button>
@@ -67,4 +69,6 @@ export default function MatchResult({ color, score, topic, sparkLine, promptLine
       </div>
     </div>
   );
-}
+};
+
+export default MatchResult;
